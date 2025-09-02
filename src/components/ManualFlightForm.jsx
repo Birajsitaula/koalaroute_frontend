@@ -21,6 +21,7 @@ export default function ManualFlightForm() {
     setError("");
     setFlights([]);
     setSearchId("");
+    //updating
 
     if (!origin || !destination || !departure) {
       setError("Origin, destination, and departure date are required.");
