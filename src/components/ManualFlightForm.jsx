@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BASE_URL } from "../config";
+import { API_BASE_URL } from "../config";
 import "./ManualFlightForm.css";
 
 export default function ManualFlightForm() {
