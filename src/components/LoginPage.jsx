@@ -34,7 +34,6 @@ export default function LoginPage() {
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("userEmail", data.user.email);
         navigate("/koalaroute");
-        window.location.reload();
       } else {
         setError(data.msg || "Login failed. Please check your credentials.");
       }
