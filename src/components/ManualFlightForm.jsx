@@ -1,321 +1,434 @@
-import React, { useState } from "react";
-import { API_BASE_URL } from "../config";
-import "./ManualFlightForm.css";
+import express from "express";
+import fetch from "node-fetch";
+import crypto from "crypto";
+import { authMiddleware } from "../middleware/auth.js";
+import "dotenv/config";
 
-export default function ManualFlightForm() {
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
-  const [departure, setDeparture] = useState("");
-  const [returnDate, setReturnDate] = useState("");
-  const [currency, setCurrency] = useState("usd");
-  const [passengers, setPassengers] = useState(1);
-  const [tripClass, setTripClass] = useState("Y");
-  const [flights, setFlights] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [searchStatus, setSearchStatus] = useState("");
-  const [searchId, setSearchId] = useState("");
+const router = express.Router();
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setError("");
-    setFlights([]);
-    setSearchId("");
+const SEARCH_API = "https://api.travelpayouts.com/v1/flight_search";
+const RESULTS_API = "https://api.travelpayouts.com/v1/flight_search_results";
+const TOKEN = process.env.AVIASALES_API_KEY;
+const MARKER = process.env.AVIASALES_MARKER;
 
-    if (!origin || !destination || !departure) {
-      setError("Origin, destination, and departure date are required.");
-      return;
-    }
+// Helper function to generate signature
+function generateSignature(params, token) {
+  try {
+    // Create a sorted array of all parameter values
+    const flattenObject = (obj) => {
+      const values = [];
 
-    setLoading(true);
-    setSearchStatus("Initializing flight search...");
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("You are not authenticated.");
-      setLoading(false);
-      setSearchStatus("");
-      return;
-    }
-
-    try {
-      // Initialize search
-      const res = await fetch(`${API_BASE_URL}/koalaroute/flights`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          origin,
-          destination,
-          departure_at: departure,
-          return_at: returnDate,
-          currency,
-          passengers,
-          trip_class: tripClass,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to initialize flight search");
-      }
-
-      // Set search ID for potential polling
-      setSearchId(data.search_id);
-      setSearchStatus("Searching for flights. This may take up to a minute...");
-
-      // Display results if already available
-      if (data.data && data.data.length > 0) {
-        setFlights(data.data);
-        setSearchStatus("");
-      } else {
-        // If results aren't immediately available, poll for them
-        pollForResults(data.search_id, token);
-      }
-    } catch (err) {
-      console.error("Flight search error:", err);
-      setError(err.message);
-      setSearchStatus("");
-      setLoading(false);
-    }
-  };
-
-  const pollForResults = async (searchId, token) => {
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    const poll = async () => {
-      attempts++;
-
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/koalaroute/flights/${searchId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+      const processValue = (value) => {
+        if (typeof value === "object" && value !== null) {
+          if (Array.isArray(value)) {
+            value.forEach((item) => processValue(item));
+          } else {
+            Object.values(value).forEach((val) => processValue(val));
           }
-        );
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to fetch flight results");
-        }
-
-        if (data.data && data.data.length > 0) {
-          // We have results
-          setFlights(data.data);
-          setSearchStatus("");
-          setLoading(false);
-          return;
-        } else if (attempts < maxAttempts) {
-          // Continue polling
-          setSearchStatus(
-            `Searching for flights... (Attempt ${attempts}/${maxAttempts})`
-          );
-          setTimeout(poll, 5000); // Poll every 5 seconds
         } else {
-          // Max attempts reached
-          setError("Flight search timeout. Please try again.");
-          setSearchStatus("");
-          setLoading(false);
+          values.push(value.toString());
         }
-      } catch (err) {
-        console.error("Polling error:", err);
-        if (attempts < maxAttempts) {
-          setTimeout(poll, 5000);
-        } else {
-          setError("Flight search failed. Please try again.");
-          setSearchStatus("");
-          setLoading(false);
-        }
-      }
+      };
+
+      Object.values(params).forEach((value) => processValue(value));
+      return values.sort();
     };
 
-    // Start polling
-    poll();
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  };
-
-  const formatTime = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
-  return (
-    <div className="manual-flight-form">
-      <h2>Search Flights</h2>
-      <form onSubmit={handleSearch}>
-        <div className="form-row">
-          <div className="form-group">
-            <label>Origin (IATA code)</label>
-            <input
-              type="text"
-              placeholder="e.g., NYC"
-              value={origin}
-              onChange={(e) => setOrigin(e.target.value.toUpperCase())}
-              maxLength={3}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Destination (IATA code)</label>
-            <input
-              type="text"
-              placeholder="e.g., LON"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value.toUpperCase())}
-              maxLength={3}
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Departure Date</label>
-            <input
-              type="date"
-              value={departure}
-              onChange={(e) => setDeparture(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Return Date (optional)</label>
-            <input
-              type="date"
-              value={returnDate}
-              onChange={(e) => setReturnDate(e.target.value)}
-              min={departure || new Date().toISOString().split("T")[0]}
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Passengers</label>
-            <select
-              value={passengers}
-              onChange={(e) => setPassengers(parseInt(e.target.value))}
-            >
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                <option key={num} value={num}>
-                  {num}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Class</label>
-            <select
-              value={tripClass}
-              onChange={(e) => setTripClass(e.target.value)}
-            >
-              <option value="Y">Economy</option>
-              <option value="C">Business</option>
-              <option value="F">First</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Currency</label>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-            >
-              <option value="usd">USD</option>
-              <option value="eur">EUR</option>
-              <option value="gbp">GBP</option>
-            </select>
-          </div>
-        </div>
-
-        <button type="submit" disabled={loading}>
-          {loading ? "Searching..." : "Search Flights"}
-        </button>
-      </form>
-
-      {searchStatus && <div className="search-status">{searchStatus}</div>}
-      {error && <p className="error-text">{error}</p>}
-
-      {flights.length > 0 && (
-        <div className="results-container">
-          <h3>Found {flights.length} Flights</h3>
-          <div className="flights-list">
-            {flights.map((flight, index) => (
-              <div key={index} className="flight-card">
-                <div className="flight-header">
-                  <div className="airline">
-                    {flight.airline || "Multiple Airlines"}
-                  </div>
-                  <div className="price">
-                    {flight.price} {flight.currency}
-                  </div>
-                </div>
-
-                <div className="flight-details">
-                  <div className="route">
-                    <div className="segment">
-                      <div className="city">{flight.origin}</div>
-                      <div className="time">
-                        {formatTime(flight.departure_at)}
-                      </div>
-                      <div className="date">
-                        {formatDate(flight.departure_at)}
-                      </div>
-                    </div>
-
-                    <div className="arrow">→</div>
-
-                    <div className="segment">
-                      <div className="city">{flight.destination}</div>
-                      <div className="time">
-                        {formatTime(flight.arrival_at)}
-                      </div>
-                      <div className="date">
-                        {formatDate(flight.arrival_at)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flight-info">
-                    <div className="info-item">
-                      <span className="label">Duration:</span>
-                      <span className="value">{flight.duration} min</span>
-                    </div>
-
-                    <div className="info-item">
-                      <span className="label">Transfers:</span>
-                      <span className="value">{flight.transfers || 0}</span>
-                    </div>
-
-                    <div className="info-item">
-                      <span className="label">Flight number:</span>
-                      <span className="value">
-                        {flight.flight_number || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <button className="select-flight">Select Flight</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    const values = flattenObject(params);
+    const valuesString = values.join(":");
+    return crypto
+      .createHash("md5")
+      .update(`${token}:${valuesString}`)
+      .digest("hex");
+  } catch (err) {
+    console.error("Signature generation error:", err);
+    throw new Error("Failed to generate API signature");
+  }
 }
+
+// Helper function to safely parse JSON responses
+async function safeJsonParse(response) {
+  const text = await response.text();
+
+  // Check if response is unauthorized
+  if (text === "Unauthorized" || text.includes("Unauthorized")) {
+    throw new Error(
+      "API authentication failed: Unauthorized. Please check your API credentials."
+    );
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse JSON response. Raw response:", text);
+    throw new Error(
+      `API returned invalid response: ${text.substring(0, 100)}...`
+    );
+  }
+}
+
+// Dashboard routes
+router.get("/", (req, res) => {
+  try {
+    res.json({ msg: "Welcome !" });
+  } catch (err) {
+    console.error("Dashboard Error:", err);
+    res.status(500).json({ error: "Failed to fetch dashboard data" });
+  }
+});
+
+router.get("/dashboard", authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    res.json({ msg: "Welcome back!", userId });
+  } catch (err) {
+    console.error("Dashboard Error:", err);
+    res.status(500).json({ error: "Failed to fetch dashboard data" });
+  }
+});
+
+// Flight search endpoint
+router.post("/flights", authMiddleware, async (req, res) => {
+  try {
+    // Check if API credentials are configured
+    if (!TOKEN) {
+      console.error("AVIASALES_API_KEY is missing from environment variables");
+      return res.status(500).json({
+        error:
+          "Server configuration error: AVIASALES_API_KEY is missing from environment variables",
+      });
+    }
+
+    if (!MARKER) {
+      console.error("AVIASALES_MARKER is missing from environment variables");
+      return res.status(500).json({
+        error:
+          "Server configuration error: AVIASALES_MARKER is missing from environment variables",
+      });
+    }
+
+    console.log("API credentials found:", {
+      tokenPresent: !!TOKEN,
+      markerPresent: !!MARKER,
+      tokenPrefix: TOKEN ? TOKEN.substring(0, 10) + "..." : "undefined",
+      marker: MARKER,
+    });
+
+    const {
+      origin,
+      destination,
+      departure_at,
+      return_at,
+      currency = "usd",
+      passengers = 1,
+      trip_class = "Y",
+    } = req.body;
+
+    if (!origin || !destination || !departure_at) {
+      return res.status(400).json({
+        error: "Origin, destination, and departure date are required",
+      });
+    }
+
+    // Validate dates
+    const depDate = new Date(departure_at);
+    if (isNaN(depDate.getTime())) {
+      return res.status(400).json({ error: "Invalid departure date" });
+    }
+
+    // Prepare segments
+    const segments = [
+      {
+        origin: origin.toUpperCase(),
+        destination: destination.toUpperCase(),
+        date: departure_at,
+      },
+    ];
+
+    // Add return segment if provided
+    if (return_at) {
+      const retDate = new Date(return_at);
+      if (isNaN(retDate.getTime())) {
+        return res.status(400).json({ error: "Invalid return date" });
+      }
+      segments.push({
+        origin: destination.toUpperCase(),
+        destination: origin.toUpperCase(),
+        date: return_at,
+      });
+    }
+
+    // Prepare request parameters
+    const requestParams = {
+      marker: MARKER,
+      host: req.headers.host || "localhost",
+      user_ip: req.ip || req.connection.remoteAddress || "127.0.0.1",
+      locale: "en",
+      trip_class: trip_class.toUpperCase(),
+      passengers: {
+        adults: parseInt(passengers),
+        children: 0,
+        infants: 0,
+      },
+      segments: segments,
+    };
+
+    // Generate signature
+    requestParams.signature = generateSignature(requestParams, TOKEN);
+
+    console.log("Making API request with params:", {
+      ...requestParams,
+      signature: "***", // Don't log the actual signature
+    });
+
+    // Initialize search
+    const searchResponse = await fetch(SEARCH_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Access-Token": TOKEN,
+      },
+      body: JSON.stringify(requestParams),
+    });
+
+    // Log response details for debugging
+    console.log("API response status:", searchResponse.status);
+    console.log(
+      "API response headers:",
+      Object.fromEntries(searchResponse.headers.entries())
+    );
+
+    // Check response status before parsing
+    if (searchResponse.status === 401) {
+      return res.status(401).json({
+        error: "API authentication failed. Please check your API credentials.",
+      });
+    }
+
+    // Use safe JSON parsing
+    const searchData = await safeJsonParse(searchResponse);
+
+    if (!searchResponse.ok) {
+      return res.status(searchResponse.status).json({
+        error: searchData.error || "Failed to initialize flight search",
+      });
+    }
+
+    const searchId = searchData.search_id;
+
+    if (!searchId) {
+      return res.status(500).json({ error: "No search ID received from API" });
+    }
+
+    // Poll for results
+    let attempts = 0;
+    const maxAttempts = 12; // 60 seconds total with 5s intervals
+    let results = null;
+
+    while (attempts < maxAttempts && !results) {
+      attempts++;
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      try {
+        const resultsResponse = await fetch(`${RESULTS_API}?uuid=${searchId}`, {
+          headers: {
+            "Accept-Encoding": "gzip, deflate",
+            "X-Access-Token": TOKEN,
+          },
+        });
+
+        // Check response status before parsing
+        if (resultsResponse.status === 401) {
+          throw new Error("API authentication failed during results polling");
+        }
+
+        // Use safe JSON parsing
+        const resultsData = await safeJsonParse(resultsResponse);
+
+        if (resultsResponse.ok) {
+          // Check if we have actual results (not just search_id)
+          if (
+            Array.isArray(resultsData) &&
+            resultsData.length > 0 &&
+            !resultsData[0].search_id
+          ) {
+            results = resultsData;
+            break;
+          }
+        } else {
+          console.error("API error response:", resultsData);
+        }
+      } catch (pollError) {
+        console.error("Polling error:", pollError);
+        // Continue polling despite errors unless it's an auth error
+        if (pollError.message.includes("authentication failed")) {
+          break;
+        }
+      }
+    }
+
+    if (!results) {
+      return res.status(408).json({
+        error: "Flight search timeout. Please try again later.",
+      });
+    }
+
+    // Process results - convert currency and calculate total prices
+    const processedResults = results.map((flight) => {
+      // Note: API returns prices in RUB by default
+      let price = flight.price || 0;
+
+      // Simple currency conversion (in real app, use actual rates from API)
+      const conversionRates = {
+        usd: 0.011, // Example rate, use actual rates from API response
+        eur: 0.01,
+        gbp: 0.009,
+      };
+
+      const rate = conversionRates[currency.toLowerCase()] || 1;
+      const convertedPrice = price * rate * parseInt(passengers);
+
+      return {
+        ...flight,
+        price: convertedPrice.toFixed(2),
+        currency: currency.toUpperCase(),
+        passengers: parseInt(passengers),
+      };
+    });
+
+    res.json({
+      search_id: searchId,
+      data: processedResults,
+    });
+  } catch (err) {
+    console.error("Flight API Error:", err);
+
+    // Provide more specific error messages
+    if (err.message.includes("authentication failed")) {
+      res.status(401).json({
+        error: err.message,
+        details:
+          "Please check your AVIASALES_API_KEY and AVIASALES_MARKER environment variables",
+        troubleshooting: [
+          "Verify your API key and marker in the TravelPayouts dashboard",
+          "Check that your IP is whitelisted if required",
+          "Ensure your account has sufficient balance if the API requires prepayment",
+          "Confirm the API key has the correct permissions for flight search",
+        ],
+      });
+    } else {
+      res
+        .status(500)
+        .json({ error: "Failed to fetch flight data: " + err.message });
+    }
+  }
+});
+
+// Additional endpoint to check search status
+router.get("/flights/:searchId", authMiddleware, async (req, res) => {
+  try {
+    const { searchId } = req.params;
+
+    const resultsResponse = await fetch(`${RESULTS_API}?uuid=${searchId}`, {
+      headers: {
+        "Accept-Encoding": "gzip, deflate",
+        "X-Access-Token": TOKEN,
+      },
+    });
+
+    // Check response status before parsing
+    if (resultsResponse.status === 401) {
+      return res.status(401).json({
+        error: "API authentication failed. Please check your API credentials.",
+      });
+    }
+
+    // Use safe JSON parsing
+    const resultsData = await safeJsonParse(resultsResponse);
+
+    if (!resultsResponse.ok) {
+      return res.status(resultsResponse.status).json({
+        error:
+          "Failed to fetch flight results: " +
+          (resultsData.error || "Unknown error"),
+      });
+    }
+
+    res.json({ data: resultsData });
+  } catch (err) {
+    console.error("Flight Results API Error:", err);
+
+    if (err.message.includes("authentication failed")) {
+      res.status(401).json({
+        error: err.message,
+        details:
+          "Please check your AVIASALES_API_KEY and AVIASALES_MARKER environment variables",
+      });
+    } else {
+      res
+        .status(500)
+        .json({ error: "Failed to fetch flight results: " + err.message });
+    }
+  }
+});
+
+// Health check endpoint to verify API connectivity
+router.get("/health", async (req, res) => {
+  try {
+    if (!TOKEN || !MARKER) {
+      return res.status(500).json({
+        status: "error",
+        message: "API credentials not configured",
+      });
+    }
+
+    // Make a simple request to check API connectivity
+    const testResponse = await fetch(
+      "https://api.travelpayouts.com/v1/latest_currencies",
+      {
+        headers: {
+          "X-Access-Token": TOKEN,
+        },
+      }
+    );
+
+    // Log response details for debugging
+    console.log("Health check response status:", testResponse.status);
+
+    if (testResponse.status === 200) {
+      res.json({
+        status: "success",
+        message: "API connectivity verified",
+      });
+    } else if (testResponse.status === 401) {
+      res.status(401).json({
+        status: "error",
+        message: "API authentication failed",
+      });
+    } else {
+      const text = await testResponse.text();
+      res.status(testResponse.status).json({
+        status: "error",
+        message: `API returned status: ${testResponse.status}`,
+        response: text.substring(0, 200),
+      });
+    }
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to connect to API: " + err.message,
+    });
+  }
+});
+
+// Debug endpoint to check environment variables
+router.get("/debug", (req, res) => {
+  res.json({
+    tokenPresent: !!TOKEN,
+    markerPresent: !!MARKER,
+    tokenPrefix: TOKEN ? TOKEN.substring(0, 10) + "..." : "undefined",
+    marker: MARKER,
+  });
+});
+
+export default router;
