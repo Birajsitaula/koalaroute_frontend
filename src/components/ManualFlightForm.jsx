@@ -40,7 +40,8 @@ export default function ManualFlightForm() {
 
     try {
       // Initialize search using the correct API_BASE_URL
-      const res = await fetch(`${API_BASE_URL}/koalaroute/flights`, {
+      // const res = await fetch(`${API_BASE_URL}/koalaroute/flights`, {
+      const res = await fetch(`${API_BASE_URL}/aviasales/search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
