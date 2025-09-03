@@ -62,7 +62,7 @@ export default function ManualFlightForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Handle authentication errors specifically
+        // Handle authentication errors specifically   m
         if (res.status === 401) {
           throw new Error("API authentication failed. Please contact support.");
         }
