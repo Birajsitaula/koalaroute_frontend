@@ -331,6 +331,171 @@
 // }
 
 // updated
+// import React, { useState } from "react";
+// import { API_BASE_URL } from "../config";
+// import "./ManualFlightForm.css";
+
+// export default function ManualFlightForm() {
+//   const [origin, setOrigin] = useState("");
+//   const [destination, setDestination] = useState("");
+//   const [departure, setDeparture] = useState("");
+//   const [returnDate, setReturnDate] = useState("");
+//   const [currency, setCurrency] = useState("usd");
+//   const [passengers, setPassengers] = useState(1);
+//   const [tripClass, setTripClass] = useState("Y");
+//   const [flights, setFlights] = useState([]);
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState("");
+//   const [searchStatus, setSearchStatus] = useState("");
+//   // tension
+
+//   const handleSearch = async (e) => {
+//     e.preventDefault();
+//     setError("");
+//     setFlights([]);
+//     setSearchStatus("");
+
+//     if (!origin || !destination || !departure) {
+//       setError("Origin, destination, and departure date are required.");
+//       return;
+//     }
+
+//     setLoading(true);
+//     setSearchStatus("Searching for flights...");
+
+//     const token = localStorage.getItem("token");
+
+//     try {
+//       const res = await fetch(`${API_BASE_URL}/aviasales/search`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: token ? `Bearer ${token}` : "",
+//         },
+//         body: JSON.stringify({
+//           origin,
+//           destination,
+//           departure,
+//           returnDate,
+//           passengers,
+//           tripClass,
+//         }),
+//       });
+
+//       const data = await res.json();
+
+//       if (!res.ok) {
+//         throw new Error(data.error || data.details || "Flight search failed");
+//       }
+
+//       if (data.data && data.data.length > 0) {
+//         setFlights(data.data);
+//         setSearchStatus("");
+//       } else {
+//         setSearchStatus("No flights found for these dates.");
+//       }
+//     } catch (err) {
+//       console.error("Flight search error:", err);
+//       setError(err.message);
+//       setSearchStatus("");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const formatTime = (dateString) => {
+//     if (!dateString) return "";
+//     const date = new Date(dateString);
+//     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+//   };
+
+//   const formatDate = (dateString) => {
+//     if (!dateString) return "-";
+//     const date = new Date(dateString);
+//     return date.toLocaleDateString();
+//   };
+
+//   return (
+//     <div className="manual-flight-form">
+//       <h2>Search Flights</h2>
+//       <form onSubmit={handleSearch}>
+//         <div className="form-row">
+//           <input
+//             type="text"
+//             placeholder="Origin (NYC)"
+//             value={origin}
+//             onChange={(e) => setOrigin(e.target.value.toUpperCase())}
+//             maxLength={3}
+//           />
+//           <input
+//             type="text"
+//             placeholder="Destination (LAX)"
+//             value={destination}
+//             onChange={(e) => setDestination(e.target.value.toUpperCase())}
+//             maxLength={3}
+//           />
+//         </div>
+//         <div className="form-row">
+//           <input
+//             type="date"
+//             value={departure}
+//             onChange={(e) => setDeparture(e.target.value)}
+//           />
+//           <input
+//             type="date"
+//             value={returnDate}
+//             onChange={(e) => setReturnDate(e.target.value)}
+//             min={departure}
+//           />
+//         </div>
+//         <div className="form-row">
+//           <select
+//             value={passengers}
+//             onChange={(e) => setPassengers(parseInt(e.target.value))}
+//           >
+//             {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+//               <option key={num} value={num}>
+//                 {num}
+//               </option>
+//             ))}
+//           </select>
+//           <select
+//             value={tripClass}
+//             onChange={(e) => setTripClass(e.target.value)}
+//           >
+//             <option value="Y">Economy</option>
+//             <option value="C">Business</option>
+//             <option value="F">First</option>
+//           </select>
+//         </div>
+//         <button type="submit" disabled={loading}>
+//           {loading ? "Searching..." : "Search Flights"}
+//         </button>
+//       </form>
+
+//       {searchStatus && <div>{searchStatus}</div>}
+//       {error && <div style={{ color: "red" }}>{error}</div>}
+
+//       {flights.length > 0 && (
+//         <div className="flights-list">
+//           {flights.map((f, i) => (
+//             <div key={i} className="flight-card">
+//               <div>
+//                 {f.airline || "Multiple Airlines"} - {f.price} RUB
+//               </div>
+//               <div>
+//                 {f.segments
+//                   .map((s) => `${s.origin} → ${s.destination} (${s.date})`)
+//                   .join(", ")}
+//               </div>
+//             </div>
+//           ))}
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
 import React, { useState } from "react";
 import { API_BASE_URL } from "../config";
 import "./ManualFlightForm.css";
@@ -347,7 +512,6 @@ export default function ManualFlightForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
-  // tension
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -377,8 +541,14 @@ export default function ManualFlightForm() {
           destination,
           departure,
           returnDate,
-          passengers,
+          passengers: {
+            // CORRECTED: Send passengers as an object
+            adults: passengers,
+            children: 0,
+            infants: 0,
+          },
           tripClass,
+          currency, // Added currency to the payload
         }),
       });
 
@@ -481,7 +651,8 @@ export default function ManualFlightForm() {
           {flights.map((f, i) => (
             <div key={i} className="flight-card">
               <div>
-                {f.airline || "Multiple Airlines"} - {f.price} RUB
+                {f.airline || "Multiple Airlines"} - {f.price}{" "}
+                {currency.toUpperCase()}
               </div>
               <div>
                 {f.segments
