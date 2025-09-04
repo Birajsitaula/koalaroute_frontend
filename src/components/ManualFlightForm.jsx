@@ -542,13 +542,12 @@ export default function ManualFlightForm() {
           departure,
           returnDate,
           passengers: {
-            // CORRECTED: Send passengers as an object
             adults: passengers,
             children: 0,
             infants: 0,
           },
           tripClass,
-          currency, // Added currency to the payload
+          // Removed 'currency' from the body
         }),
       });
 
@@ -652,7 +651,8 @@ export default function ManualFlightForm() {
             <div key={i} className="flight-card">
               <div>
                 {f.airline || "Multiple Airlines"} - {f.price}{" "}
-                {currency.toUpperCase()}
+                {/* Assuming USD by default based on API documentation */}
+                USD
               </div>
               <div>
                 {f.segments
