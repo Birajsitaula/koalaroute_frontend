@@ -359,3 +359,255 @@
     width: 40px;
   }
 }
+
+/* Add these styles to your existing SignupPage.css */
+
+.password-strength {
+  margin-top: 0.5rem;
+}
+
+.strength-meter {
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.strength-bar {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease, background 0.3s ease;
+  border-radius: 3px;
+}
+
+.strength-bar.active {
+  background: #ff4d4f; /* Red for weak */
+}
+
+.strength-bar.medium {
+  background: #faad14; /* Orange for medium */
+}
+
+.strength-bar.strong {
+  background: #52c41a; /* Green for strong */
+}
+
+.strength-feedback {
+  font-size: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.strength-text.weak {
+  color: #ff4d4f;
+}
+
+.strength-text.medium {
+  color: #faad14;
+}
+
+.strength-text.strong {
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.password-requirements {
+  background: #f9f9f9;
+  padding: 0.75rem;
+  border-radius: var(--border-radius);
+  margin-top: 0.5rem;
+}
+
+.requirements-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-light);
+}
+
+.password-requirements ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.password-requirements li {
+  font-size: 0.7rem;
+  color: #999;
+  position: relative;
+  padding-left: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.password-requirements li:before {
+  content: "✗";
+  position: absolute;
+  left: 0;
+  color: #d9d9d9;
+}
+
+.password-requirements li.met {
+  color: #52c41a;
+}
+
+.password-requirements li.met:before {
+  content: "✓";
+  color: #52c41a;
+}
+
+.password-mismatch {
+  font-size: 0.75rem;
+  color: #ff4d4f;
+  margin: 0.25rem 0 0 0;
+}
+
+.password-match {
+  font-size: 0.75rem;
+  color: #52c41a;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Add these styles to your existing SignupPage.css */
+
+.password-input-group {
+  position: relative;
+}
+
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-input-wrapper input {
+  padding-right: 45px; /* Make space for the eye icon */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-light);
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--primary-color);
+  background-color: rgba(74, 111, 165, 0.1);
+}
+
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* Update the existing password strength styles to account for the eye icon */
+.password-strength {
+  margin-top: 0.5rem;
+}
+
+.strength-meter {
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.strength-bar {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease, background 0.3s ease;
+  border-radius: 3px;
+}
+
+.strength-bar.active {
+  background: #ff4d4f; /* Red for weak */
+}
+
+.strength-bar.medium {
+  background: #faad14; /* Orange for medium */
+}
+
+.strength-bar.strong {
+  background: #52c41a; /* Green for strong */
+}
+
+.strength-feedback {
+  font-size: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.strength-text.weak {
+  color: #ff4d4f;
+}
+
+.strength-text.medium {
+  color: #faad14;
+}
+
+.strength-text.strong {
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.password-requirements {
+  background: #f9f9f9;
+  padding: 0.75rem;
+  border-radius: var(--border-radius);
+  margin-top: 0.5rem;
+}
+
+.requirements-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-light);
+}
+
+.password-requirements ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.password-requirements li {
+  font-size: 0.7rem;
+  color: #999;
+  position: relative;
+  padding-left: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.password-requirements li:before {
+  content: "✗";
+  position: absolute;
+  left: 0;
+  color: #d9d9d9;
+}
+
+.password-requirements li.met {
+  color: #52c41a;
+}
+
+.password-requirements li.met:before {
+  content: "✓";
+  color: #52c41a;
+}
+
+.password-mismatch {
+  font-size: 0.75rem;
+  color: #ff4d4f;
+  margin: 0.25rem 0 0 0;
+}
+
+.password-match {
+  font-size: 0.75rem;
+  color: #52c41a;
+  margin: 0.25rem 0 0 0;
+}
