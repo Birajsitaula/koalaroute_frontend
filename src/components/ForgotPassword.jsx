@@ -13,6 +13,14 @@ export default function ForgotPassword() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setMessage("");
+
+    // Basic email validation
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
@@ -21,15 +29,23 @@ export default function ForgotPassword() {
         body: JSON.stringify({ email }),
       });
 
-      const data = await res.json();
-
+      // Check if the response is OK (status 200-299)
       if (res.ok) {
-        setMessage("Password reset instructions sent to your email");
+        const data = await res.json();
+        setMessage(
+          data.message ||
+            "If this email is registered, you will receive a password reset link shortly."
+        );
       } else {
-        setError(data.msg || "Failed to send reset instructions");
+        // Handle HTTP error statuses
+        const data = await res.json();
+        setError(
+          data.error || "Failed to process your request. Please try again."
+        );
       }
     } catch (err) {
-      setError("Server error. Please try again.");
+      console.error("Forgot password error:", err);
+      setError("Network error. Please check your connection and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -62,18 +78,30 @@ export default function ForgotPassword() {
           </div>
 
           <form onSubmit={handleSubmit} className="forgot-password-form">
-            {error && <div className="error-message">{error}</div>}
-            {message && <div className="success-message">{message}</div>}
+            {error && (
+              <div className="error-message">
+                <span className="error-icon">⚠️</span>
+                {error}
+              </div>
+            )}
+
+            {message && (
+              <div className="success-message">
+                <span className="success-icon">✅</span>
+                {message}
+              </div>
+            )}
 
             <div className="input-group">
               <label htmlFor="email">Email Address</label>
               <input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="Enter your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -85,7 +113,7 @@ export default function ForgotPassword() {
               {isLoading ? (
                 <>
                   <span className="spinner"></span>
-                  Sending...
+                  Processing...
                 </>
               ) : (
                 "Send Reset Instructions"
