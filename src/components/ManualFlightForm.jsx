@@ -1,666 +1,447 @@
-// import React, { useState } from "react";
-// import { API_BASE_URL } from "../config";
-// import "./ManualFlightForm.css";
-
-// export default function ManualFlightForm() {
-//   const [origin, setOrigin] = useState("");
-//   const [destination, setDestination] = useState("");
-//   const [departure, setDeparture] = useState("");
-//   const [returnDate, setReturnDate] = useState("");
-//   const [currency, setCurrency] = useState("usd");
-//   const [passengers, setPassengers] = useState(1);
-//   const [tripClass, setTripClass] = useState("Y");
-//   const [flights, setFlights] = useState([]);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState("");
-//   const [searchStatus, setSearchStatus] = useState("");
-//   const [searchId, setSearchId] = useState("");
-
-//   const handleSearch = async (e) => {
-//     e.preventDefault();
-//     setError("");
-//     setFlights([]);
-//     setSearchId("");
-//     //updating
-
-//     if (!origin || !destination || !departure) {
-//       setError("Origin, destination, and departure date are required.");
-//       return;
-//     }
-
-//     setLoading(true);
-//     setSearchStatus("Initializing flight search...");
-
-//     const token = localStorage.getItem("token");
-//     if (!token) {
-//       setError("You are not authenticated.");
-//       setLoading(false);
-//       setSearchStatus("");
-//       return;
-//     }
-
-//     try {
-//       // Initialize search using the correct API_BASE_URL
-//       // const res = await fetch(`${API_BASE_URL}/koalaroute/flights`, {
-//       const res = await fetch(`${API_BASE_URL}/aviasales/search`, {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer ${token}`,
-//         },
-//         body: JSON.stringify({
-//           origin,
-//           destination,
-//           departure_at: departure,
-//           return_at: returnDate,
-//           currency,
-//           passengers,
-//           trip_class: tripClass,
-//         }),
-//       });
-
-//       const data = await res.json();
-
-//       if (!res.ok) {
-//         // Handle authentication errors specifically   m
-//         if (res.status === 401) {
-//           throw new Error("API authentication failed. Please contact support.");
-//         }
-//         throw new Error(data.error || "Failed to initialize flight search");
-//       }
-
-//       // Set search ID for potential polling
-//       setSearchId(data.search_id);
-
-//       if (data.data && data.data.length > 0) {
-//         // Results are immediately available
-//         setFlights(data.data);
-//         setSearchStatus("");
-//       } else {
-//         // If results aren't immediately available, show waiting message
-//         setSearchStatus(
-//           "Searching for flights. This may take up to a minute..."
-//         );
-
-//         // Poll for results
-//         pollForResults(data.search_id, token);
-//       }
-//     } catch (err) {
-//       console.error("Flight search error:", err);
-//       setError(err.message);
-//       setSearchStatus("");
-//       setLoading(false);
-//     }
-//   };
-
-//   const pollForResults = async (searchId, token) => {
-//     let attempts = 0;
-//     const maxAttempts = 10;
-
-//     const poll = async () => {
-//       attempts++;
-
-//       try {
-//         const res = await fetch(
-//           `${API_BASE_URL}/koalaroute/flights/${searchId}`,
-//           {
-//             headers: {
-//               Authorization: `Bearer ${token}`,
-//             },
-//           }
-//         );
-
-//         const data = await res.json();
-
-//         if (!res.ok) {
-//           throw new Error(data.error || "Failed to fetch flight results");
-//         }
-
-//         if (data.data && data.data.length > 0) {
-//           // We have results
-//           setFlights(data.data);
-//           setSearchStatus("");
-//           setLoading(false);
-//           return;
-//         } else if (attempts < maxAttempts) {
-//           // Continue polling
-//           setSearchStatus(
-//             `Searching for flights... (Attempt ${attempts}/${maxAttempts})`
-//           );
-//           setTimeout(poll, 5000); // Poll every 5 seconds
-//         } else {
-//           // Max attempts reached
-//           setError("Flight search timeout. Please try again.");
-//           setSearchStatus("");
-//           setLoading(false);
-//         }
-//       } catch (err) {
-//         console.error("Polling error:", err);
-//         if (attempts < maxAttempts) {
-//           setTimeout(poll, 5000);
-//         } else {
-//           setError("Flight search failed. Please try again.");
-//           setSearchStatus("");
-//           setLoading(false);
-//         }
-//       }
-//     };
-
-//     // Start polling
-//     poll();
-//   };
-
-//   const formatDate = (dateString) => {
-//     if (!dateString) return "-";
-//     const date = new Date(dateString);
-//     return date.toLocaleDateString();
-//   };
-
-//   const formatTime = (dateString) => {
-//     if (!dateString) return "";
-//     const date = new Date(dateString);
-//     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-//   };
-
-//   return (
-//     <div className="manual-flight-form">
-//       <h2>Search Flights</h2>
-//       <form onSubmit={handleSearch}>
-//         <div className="form-row">
-//           <div className="form-group">
-//             <label>Origin (IATA code)</label>
-//             <input
-//               type="text"
-//               placeholder="e.g., NYC"
-//               value={origin}
-//               onChange={(e) => setOrigin(e.target.value.toUpperCase())}
-//               maxLength={3}
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Destination (IATA code)</label>
-//             <input
-//               type="text"
-//               placeholder="e.g., LON"
-//               value={destination}
-//               onChange={(e) => setDestination(e.target.value.toUpperCase())}
-//               maxLength={3}
-//             />
-//           </div>
-//         </div>
-
-//         <div className="form-row">
-//           <div className="form-group">
-//             <label>Departure Date</label>
-//             <input
-//               type="date"
-//               value={departure}
-//               onChange={(e) => setDeparture(e.target.value)}
-//               min={new Date().toISOString().split("T")[0]}
-//             />
-//           </div>
-
-//           <div className="form-group">
-//             <label>Return Date (optional)</label>
-//             <input
-//               type="date"
-//               value={returnDate}
-//               onChange={(e) => setReturnDate(e.target.value)}
-//               min={departure || new Date().toISOString().split("T")[0]}
-//             />
-//           </div>
-//         </div>
-
-//         <div className="form-row">
-//           <div className="form-group">
-//             <label>Passengers</label>
-//             <select
-//               value={passengers}
-//               onChange={(e) => setPassengers(parseInt(e.target.value))}
-//             >
-//               {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-//                 <option key={num} value={num}>
-//                   {num}
-//                 </option>
-//               ))}
-//             </select>
-//           </div>
-
-//           <div className="form-group">
-//             <label>Class</label>
-//             <select
-//               value={tripClass}
-//               onChange={(e) => setTripClass(e.target.value)}
-//             >
-//               <option value="Y">Economy</option>
-//               <option value="C">Business</option>
-//               <option value="F">First</option>
-//             </select>
-//           </div>
-
-//           <div className="form-group">
-//             <label>Currency</label>
-//             <select
-//               value={currency}
-//               onChange={(e) => setCurrency(e.target.value)}
-//             >
-//               <option value="usd">USD</option>
-//               <option value="eur">EUR</option>
-//               <option value="gbp">GBP</option>
-//             </select>
-//           </div>
-//         </div>
-
-//         <button type="submit" disabled={loading}>
-//           {loading ? "Searching..." : "Search Flights"}
-//         </button>
-//       </form>
-
-//       {searchStatus && <div className="search-status">{searchStatus}</div>}
-//       {error && <p className="error-text">{error}</p>}
-
-//       {flights.length > 0 && (
-//         <div className="results-container">
-//           <h3>Found {flights.length} Flights</h3>
-//           <div className="flights-list">
-//             {flights.map((flight, index) => (
-//               <div key={index} className="flight-card">
-//                 <div className="flight-header">
-//                   <div className="airline">
-//                     {flight.airline || "Multiple Airlines"}
-//                   </div>
-//                   <div className="price">
-//                     {flight.price} {flight.currency}
-//                   </div>
-//                 </div>
-
-//                 <div className="flight-details">
-//                   <div className="route">
-//                     <div className="segment">
-//                       <div className="city">{flight.origin}</div>
-//                       <div className="time">
-//                         {formatTime(flight.departure_at)}
-//                       </div>
-//                       <div className="date">
-//                         {formatDate(flight.departure_at)}
-//                       </div>
-//                     </div>
-
-//                     <div className="arrow">→</div>
-
-//                     <div className="segment">
-//                       <div className="city">{flight.destination}</div>
-//                       <div className="time">
-//                         {formatTime(flight.arrival_at)}
-//                       </div>
-//                       <div className="date">
-//                         {formatDate(flight.arrival_at)}
-//                       </div>
-//                     </div>
-//                   </div>
-
-//                   <div className="flight-info">
-//                     <div className="info-item">
-//                       <span className="label">Duration:</span>
-//                       <span className="value">{flight.duration} min</span>
-//                     </div>
-
-//                     <div className="info-item">
-//                       <span className="label">Transfers:</span>
-//                       <span className="value">{flight.transfers || 0}</span>
-//                     </div>
-
-//                     <div className="info-item">
-//                       <span className="label">Flight number:</span>
-//                       <span className="value">
-//                         {flight.flight_number || "N/A"}
-//                       </span>
-//                     </div>
-//                   </div>
-//                 </div>
-
-//                 <button className="select-flight">Select Flight</button>
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// updated
-// import React, { useState } from "react";
-// import { API_BASE_URL } from "../config";
-// import "./ManualFlightForm.css";
-
-// export default function ManualFlightForm() {
-//   const [origin, setOrigin] = useState("");
-//   const [destination, setDestination] = useState("");
-//   const [departure, setDeparture] = useState("");
-//   const [returnDate, setReturnDate] = useState("");
-//   const [currency, setCurrency] = useState("usd");
-//   const [passengers, setPassengers] = useState(1);
-//   const [tripClass, setTripClass] = useState("Y");
-//   const [flights, setFlights] = useState([]);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState("");
-//   const [searchStatus, setSearchStatus] = useState("");
-//   // tension
-
-//   const handleSearch = async (e) => {
-//     e.preventDefault();
-//     setError("");
-//     setFlights([]);
-//     setSearchStatus("");
-
-//     if (!origin || !destination || !departure) {
-//       setError("Origin, destination, and departure date are required.");
-//       return;
-//     }
-
-//     setLoading(true);
-//     setSearchStatus("Searching for flights...");
-
-//     const token = localStorage.getItem("token");
-
-//     try {
-//       const res = await fetch(`${API_BASE_URL}/aviasales/search`, {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: token ? `Bearer ${token}` : "",
-//         },
-//         body: JSON.stringify({
-//           origin,
-//           destination,
-//           departure,
-//           returnDate,
-//           passengers,
-//           tripClass,
-//         }),
-//       });
-
-//       const data = await res.json();
-
-//       if (!res.ok) {
-//         throw new Error(data.error || data.details || "Flight search failed");
-//       }
-
-//       if (data.data && data.data.length > 0) {
-//         setFlights(data.data);
-//         setSearchStatus("");
-//       } else {
-//         setSearchStatus("No flights found for these dates.");
-//       }
-//     } catch (err) {
-//       console.error("Flight search error:", err);
-//       setError(err.message);
-//       setSearchStatus("");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const formatTime = (dateString) => {
-//     if (!dateString) return "";
-//     const date = new Date(dateString);
-//     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-//   };
-
-//   const formatDate = (dateString) => {
-//     if (!dateString) return "-";
-//     const date = new Date(dateString);
-//     return date.toLocaleDateString();
-//   };
-
-//   return (
-//     <div className="manual-flight-form">
-//       <h2>Search Flights</h2>
-//       <form onSubmit={handleSearch}>
-//         <div className="form-row">
-//           <input
-//             type="text"
-//             placeholder="Origin (NYC)"
-//             value={origin}
-//             onChange={(e) => setOrigin(e.target.value.toUpperCase())}
-//             maxLength={3}
-//           />
-//           <input
-//             type="text"
-//             placeholder="Destination (LAX)"
-//             value={destination}
-//             onChange={(e) => setDestination(e.target.value.toUpperCase())}
-//             maxLength={3}
-//           />
-//         </div>
-//         <div className="form-row">
-//           <input
-//             type="date"
-//             value={departure}
-//             onChange={(e) => setDeparture(e.target.value)}
-//           />
-//           <input
-//             type="date"
-//             value={returnDate}
-//             onChange={(e) => setReturnDate(e.target.value)}
-//             min={departure}
-//           />
-//         </div>
-//         <div className="form-row">
-//           <select
-//             value={passengers}
-//             onChange={(e) => setPassengers(parseInt(e.target.value))}
-//           >
-//             {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-//               <option key={num} value={num}>
-//                 {num}
-//               </option>
-//             ))}
-//           </select>
-//           <select
-//             value={tripClass}
-//             onChange={(e) => setTripClass(e.target.value)}
-//           >
-//             <option value="Y">Economy</option>
-//             <option value="C">Business</option>
-//             <option value="F">First</option>
-//           </select>
-//         </div>
-//         <button type="submit" disabled={loading}>
-//           {loading ? "Searching..." : "Search Flights"}
-//         </button>
-//       </form>
-
-//       {searchStatus && <div>{searchStatus}</div>}
-//       {error && <div style={{ color: "red" }}>{error}</div>}
-
-//       {flights.length > 0 && (
-//         <div className="flights-list">
-//           {flights.map((f, i) => (
-//             <div key={i} className="flight-card">
-//               <div>
-//                 {f.airline || "Multiple Airlines"} - {f.price} RUB
-//               </div>
-//               <div>
-//                 {f.segments
-//                   .map((s) => `${s.origin} → ${s.destination} (${s.date})`)
-//                   .join(", ")}
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-import React, { useState } from "react";
-import { API_BASE_URL } from "../config";
+import React, { useState, useRef, useEffect } from "react";
+import { API_BASE_URL } from "../config.js";
 import "./ManualFlightForm.css";
 
 export default function ManualFlightForm() {
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
-  const [departure, setDeparture] = useState("");
-  const [returnDate, setReturnDate] = useState("");
-  const [currency, setCurrency] = useState("usd");
-  const [passengers, setPassengers] = useState(1);
-  const [tripClass, setTripClass] = useState("Y");
+  const [formData, setFormData] = useState({
+    origin: "",
+    destination: "",
+    departure: "",
+    returnDate: "",
+    passengers: 1,
+  });
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [searchStatus, setSearchStatus] = useState("");
+  const [expandedFlight, setExpandedFlight] = useState(null);
+  const resultsRef = useRef(null);
+
+  useEffect(() => {
+    if (flights.length > 0 && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [flights]);
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: field === "passengers" ? parseInt(value) : value,
+    }));
+    setError("");
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
     setError("");
     setFlights([]);
-    setSearchStatus("");
+    setExpandedFlight(null);
 
-    if (!origin || !destination || !departure) {
-      setError("Origin, destination, and departure date are required.");
+    if (!formData.origin || !formData.destination || !formData.departure) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    if (formData.origin === formData.destination) {
+      setError("Origin and destination cannot be the same");
       return;
     }
 
     setLoading(true);
-    setSearchStatus("Searching for flights...");
-
-    const token = localStorage.getItem("token");
-
     try {
-      const res = await fetch(`${API_BASE_URL}/aviasales/search`, {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/koalaroute/flights`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: token ? `Bearer ${token}` : "",
         },
         body: JSON.stringify({
-          origin,
-          destination,
-          departure,
-          returnDate,
-          passengers: {
-            adults: passengers,
-            children: 0,
-            infants: 0,
-          },
-          tripClass,
-          // Removed 'currency' from the body
+          origin: formData.origin.toUpperCase(),
+          destination: formData.destination.toUpperCase(),
+          departure_at: formData.departure,
+          return_at: formData.returnDate || "",
+          passengers: formData.passengers,
         }),
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || data.details || "Flight search failed");
-      }
-
-      if (data.data && data.data.length > 0) {
-        setFlights(data.data);
-        setSearchStatus("");
-      } else {
-        setSearchStatus("No flights found for these dates.");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to fetch flights");
+      setFlights(data.offers || []);
     } catch (err) {
-      console.error("Flight search error:", err);
-      setError(err.message);
-      setSearchStatus("");
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const formatTime = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const formatCurrency = (amount, currency) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
+  const formatDuration = (duration) => {
+    if (!duration) return "";
+    const hours = Math.floor(duration / 3600);
+    const minutes = Math.floor((duration % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
-    return date.toLocaleDateString();
+    return {
+      date: date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      time: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      weekday: date.toLocaleDateString("en-US", { weekday: "short" }),
+    };
+  };
+
+  const toggleFlightDetails = (index) => {
+    setExpandedFlight(expandedFlight === index ? null : index);
+  };
+
+  const quickSearch = (route) => {
+    const [origin, destination] = route.split("-");
+    setFormData((prev) => ({
+      ...prev,
+      origin: origin.toUpperCase(),
+      destination: destination.toUpperCase(),
+      departure: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+    }));
   };
 
   return (
-    <div className="manual-flight-form">
-      <h2>Search Flights</h2>
-      <form onSubmit={handleSearch}>
-        <div className="form-row">
-          <input
-            type="text"
-            placeholder="Origin (NYC)"
-            value={origin}
-            onChange={(e) => setOrigin(e.target.value.toUpperCase())}
-            maxLength={3}
-          />
-          <input
-            type="text"
-            placeholder="Destination (LAX)"
-            value={destination}
-            onChange={(e) => setDestination(e.target.value.toUpperCase())}
-            maxLength={3}
-          />
+    <div className="flight-search-container">
+      {/* Header */}
+      <div className="flight-header">
+        <div className="flight-title">
+          <span className="flight-icon">✈️</span>
+          <h3>Flight Search</h3>
         </div>
-        <div className="form-row">
-          <input
-            type="date"
-            value={departure}
-            onChange={(e) => setDeparture(e.target.value)}
-          />
-          <input
-            type="date"
-            value={returnDate}
-            onChange={(e) => setReturnDate(e.target.value)}
-            min={departure}
-          />
+        <p>Find the best flights for your journey</p>
+      </div>
+
+      {/* Quick Search Chips */}
+      <div className="quick-search-section">
+        <div className="suggestion-chips">
+          <button onClick={() => quickSearch("NYC-LAX")}>NYC → LAX</button>
+          <button onClick={() => quickSearch("LON-PAR")}>LON → PAR</button>
+          <button onClick={() => quickSearch("SYD-MEL")}>SYD → MEL</button>
+          <button onClick={() => quickSearch("TOK-SEO")}>TOK → SEO</button>
         </div>
-        <div className="form-row">
-          <select
-            value={passengers}
-            onChange={(e) => setPassengers(parseInt(e.target.value))}
-          >
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-              <option key={num} value={num}>
-                {num}
-              </option>
-            ))}
-          </select>
-          <select
-            value={tripClass}
-            onChange={(e) => setTripClass(e.target.value)}
-          >
-            <option value="Y">Economy</option>
-            <option value="C">Business</option>
-            <option value="F">First</option>
-          </select>
+      </div>
+
+      {/* Search Form */}
+      <form onSubmit={handleSearch} className="flight-search-form">
+        <div className="form-grid">
+          <div className="form-group">
+            <label>From</label>
+            <div className="input-wrapper">
+              {/* <span className="input-icon">📍</span> */}
+              <input
+                type="text"
+                placeholder="City or Airport (e.g., NYC)"
+                value={formData.origin}
+                onChange={(e) =>
+                  handleChange("origin", e.target.value.toUpperCase())
+                }
+                maxLength={3}
+                required
+                className="modern-input"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>To</label>
+            <div className="input-wrapper">
+              {/* <span className="input-icon">🏁</span> */}
+              <input
+                type="text"
+                placeholder="City or Airport (e.g., LAX)"
+                value={formData.destination}
+                onChange={(e) =>
+                  handleChange("destination", e.target.value.toUpperCase())
+                }
+                maxLength={3}
+                required
+                className="modern-input"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Departure</label>
+            <div className="input-wrapper">
+              {/* <span className="input-icon">📅</span> */}
+              <input
+                type="date"
+                value={formData.departure}
+                onChange={(e) => handleChange("departure", e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                required
+                className="modern-input"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>
+              Return <span className="optional">(Optional)</span>
+            </label>
+            <div className="input-wrapper">
+              {/* <span className="input-icon">🔄</span> */}
+              <input
+                type="date"
+                value={formData.returnDate}
+                onChange={(e) => handleChange("returnDate", e.target.value)}
+                min={
+                  formData.departure || new Date().toISOString().split("T")[0]
+                }
+                className="modern-input"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Passengers</label>
+            <div className="input-wrapper">
+              {/* <span className="input-icon">👥</span> */}
+              <select
+                value={formData.passengers}
+                onChange={(e) => handleChange("passengers", e.target.value)}
+                className="modern-select"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={n}>
+                    {n} {n === 1 ? "Passenger" : "Passengers"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <button
+              type="submit"
+              className={`search-button ${loading ? "loading" : ""}`}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <div className="button-spinner"></div>
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <span className="button-icon">🔍</span>
+                  Search Flights
+                </>
+              )}
+            </button>
+          </div>
         </div>
-        <button type="submit" disabled={loading}>
-          {loading ? "Searching..." : "Search Flights"}
-        </button>
       </form>
 
-      {searchStatus && <div>{searchStatus}</div>}
-      {error && <div style={{ color: "red" }}>{error}</div>}
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          <span className="error-icon">⚠️</span>
+          {error}
+        </div>
+      )}
 
+      {/* Results Section */}
       {flights.length > 0 && (
-        <div className="flights-list">
-          {flights.map((f, i) => (
-            <div key={i} className="flight-card">
-              <div>
-                {f.airline || "Multiple Airlines"} - {f.price}{" "}
-                {/* Assuming USD by default based on API documentation */}
-                USD
-              </div>
-              <div>
-                {f.segments
-                  .map((s) => `${s.origin} → ${s.destination} (${s.date})`)
-                  .join(", ")}
-              </div>
+        <div ref={resultsRef} className="results-section">
+          <div className="results-header">
+            <h3>
+              Found {flights.length} Flight{flights.length !== 1 ? "s" : ""}
+            </h3>
+            <div className="results-sort">
+              <span>Sorted by: Price (Lowest)</span>
             </div>
-          ))}
+          </div>
+
+          <div className="flights-grid">
+            {flights.map((flight, index) => (
+              <div
+                key={index}
+                className={`flight-card ${
+                  expandedFlight === index ? "expanded" : ""
+                }`}
+                onClick={() => toggleFlightDetails(index)}
+              >
+                <div className="flight-card-main">
+                  <div className="flight-info">
+                    <div className="airline-brand">
+                      <span className="airline-logo">✈️</span>
+                      <div className="airline-details">
+                        <div className="airline-name">
+                          {flight.airline || "Multiple Airlines"}
+                        </div>
+                        <div className="flight-numbers">
+                          {flight.slices?.[0]?.segments?.[0]?.flight_number ||
+                            "—"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="route-times">
+                      <div className="time-block">
+                        <div className="time">
+                          {
+                            formatDateTime(
+                              flight.slices?.[0]?.segments?.[0]?.origin
+                                ?.departure_time
+                            ).time
+                          }
+                        </div>
+                        <div className="airport">
+                          {flight.slices?.[0]?.segments?.[0]?.origin?.iata}
+                        </div>
+                      </div>
+
+                      <div className="duration-route">
+                        <div className="duration">
+                          {formatDuration(flight.slices?.[0]?.duration)}
+                        </div>
+                        <div className="route-line">
+                          <div className="route-dot start"></div>
+                          <div className="route-line-middle"></div>
+                          <div className="route-dot end"></div>
+                        </div>
+                        <div className="route-type">
+                          {flight.slices?.length > 1 ? "Round trip" : "One way"}
+                        </div>
+                      </div>
+
+                      <div className="time-block">
+                        <div className="time">
+                          {
+                            formatDateTime(
+                              flight.slices?.[0]?.segments?.[0]?.destination
+                                ?.arrival_time
+                            ).time
+                          }
+                        </div>
+                        <div className="airport">
+                          {flight.slices?.[0]?.segments?.[0]?.destination?.iata}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flight-price">
+                      <div className="price-amount">
+                        {formatCurrency(
+                          flight.price?.amount,
+                          flight.price?.currency
+                        )}
+                      </div>
+                      <div className="price-per-person">per person</div>
+                      <div className="expand-indicator">
+                        {expandedFlight === index ? "▲" : "▼"} Details
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {expandedFlight === index && (
+                  <div className="flight-details">
+                    {flight.slices?.map((slice, sliceIndex) => (
+                      <div key={sliceIndex} className="slice-details">
+                        <div className="slice-header">
+                          <span className="slice-title">
+                            {sliceIndex === 0 ? "Outbound" : "Return"} •{" "}
+                            {
+                              formatDateTime(
+                                slice.segments?.[0]?.origin?.departure_time
+                              ).date
+                            }
+                          </span>
+                          <span className="slice-duration">
+                            Duration: {formatDuration(slice.duration)}
+                          </span>
+                        </div>
+
+                        {slice.segments?.map((segment, segIndex) => (
+                          <div key={segIndex} className="segment-detail">
+                            <div className="segment-route">
+                              <div className="segment-airports">
+                                <span className="airport-code">
+                                  {segment.origin?.iata}
+                                </span>
+                                <span className="airport-name">
+                                  {segment.origin?.city}
+                                </span>
+                              </div>
+                              <div className="segment-times">
+                                <span className="departure-time">
+                                  {
+                                    formatDateTime(
+                                      segment.origin?.departure_time
+                                    ).time
+                                  }
+                                </span>
+                                <span className="arrival-time">
+                                  {
+                                    formatDateTime(
+                                      segment.destination?.arrival_time
+                                    ).time
+                                  }
+                                </span>
+                              </div>
+                              <div className="segment-airports">
+                                <span className="airport-code">
+                                  {segment.destination?.iata}
+                                </span>
+                                <span className="airport-name">
+                                  {segment.destination?.city}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="segment-info">
+                              <span>Flight {segment.flight_number}</span>
+                              <span>•</span>
+                              <span>{segment.aircraft || "Aircraft"}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+
+                    <div className="flight-actions">
+                      <button className="select-flight-btn">
+                        Select Flight
+                      </button>
+                      <button className="save-flight-btn">💾 Save</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="loading-results">
+          <div className="loading-spinner"></div>
+          <p>Searching for the best flights...</p>
         </div>
       )}
     </div>
