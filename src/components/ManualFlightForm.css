@@ -570,8 +570,8 @@
 .booking-modal {
   background: white;
   border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
+  width: 95%; /* Increased width for mobile */
+  max-width: 600px; /* Slightly wider max-width */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
@@ -638,6 +638,11 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .flight-search-container {
+    padding: 10px; /* Reduced padding for mobile */
+    width: 100%; /* Ensure full width */
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -659,5 +664,13 @@
 
   .suggestion-chips {
     justify-content: flex-start;
+  }
+
+  .flight-card {
+    width: 100%; /* Full width for flight cards */
+  }
+
+  .flights-grid {
+    gap: 15px; /* Slightly reduced gap for mobile */
   }
 }
