@@ -334,20 +334,3 @@
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
-
-/* Add the updated styles for the chat input */
-.clear-chat-btn {
-  background: #ff4d4d;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  margin-top: 8px;
-  transition: background 0.2s ease;
-}
-
-.clear-chat-btn:hover {
-  background: #e64545;
-}
