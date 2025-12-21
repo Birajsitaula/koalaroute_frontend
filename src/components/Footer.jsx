@@ -74,15 +74,6 @@ export default function Footer() {
               <li>
                 <a href="#">Pricing</a>
               </li>
-              <li>
-                <a href="#">Use Cases</a>
-              </li>
-              <li>
-                <a href="#">Testimonials</a>
-              </li>
-              <li>
-                <a href="#">API</a>
-              </li>
             </ul>
           </div>
 
@@ -95,12 +86,7 @@ export default function Footer() {
               <li>
                 <a href="#">Blog</a>
               </li>
-              <li>
-                <a href="#">Careers</a>
-              </li>
-              <li>
-                <a href="#">Press</a>
-              </li>
+
               <li>
                 <a
                   href="mailto:contact@koalaroute.com"
@@ -119,12 +105,7 @@ export default function Footer() {
               <li>
                 <a href="#">Help Center</a>
               </li>
-              <li>
-                <a href="#">Documentation</a>
-              </li>
-              <li>
-                <a href="#">Community</a>
-              </li>
+
               <li>
                 <a href="#">Partners</a>
               </li>
@@ -132,16 +113,6 @@ export default function Footer() {
                 <a href="#">Events</a>
               </li>
             </ul>
-          </div>
-
-          <div className="footer-section">
-            <h4>Subscribe</h4>
-            <p>Get the latest news and offers</p>
-            <div className="newsletter-form">
-              <input type="email" placeholder="Enter your email" />
-              <button type="submit">Subscribe</button>
-            </div>
-            <p className="newsletter-note">We respect your privacy</p>
           </div>
         </div>
 

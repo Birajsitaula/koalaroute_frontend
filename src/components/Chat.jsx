@@ -1,3 +1,4 @@
+// src/components/Chat.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { API_BASE_URL } from "../config";
 import "./Chat.css";
