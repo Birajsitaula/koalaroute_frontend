@@ -9,7 +9,7 @@ export default function HomePage() {
       <section className="hero-section">
         <div className="hero-content">
           <h1>
-            Plan Smarter, Travel Better{" "}
+            Plan Smarter, Travel Better
             <span className="accent">with KoalaRoute AI</span>
           </h1>
           <p className="hero-description">
