@@ -12,6 +12,7 @@
   --text-color: #333;
   --text-light: #666;
   --background: #f8f9fa;
+  --background: #0f172a;
   --surface: #ffffff;
   --error: #e63946;
   --success: #2a9d8f;
@@ -29,8 +30,7 @@ body {
     "Roboto",
     sans-serif;
   color: var(--text-color);
-  /* background-color: var(--background); */
-  background-color: #325bb6;
+  background-color: var(--background);
 
   line-height: 1.6;
 }
@@ -43,7 +43,8 @@ body {
 
 /* Header Styles */
 .header {
-  background: var(--surface);
+  /* background: var(--surface); */
+  background: #0f172a;
   /* background: #325bb6; */
   box-shadow: var(--shadow);
   /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); */
@@ -74,7 +75,7 @@ body {
   background: linear-gradient(
     135deg,
     /* var(--primary-color),
-    var(--primary-dark) */ yellow,
+    var(--primary-dark) */ rgb(0, 255, 153),
     blue
   );
   border-radius: 10px;
@@ -104,8 +105,8 @@ body {
 
 .nav a {
   text-decoration: none;
-  /* color: var(--text-light); */
-  color: #000000;
+  color: var(--text-light);
+  /* color: #000000; */
   font-weight: 500;
   padding: 0.5rem 0.75rem;
   border-radius: var(--border-radius);
@@ -118,14 +119,27 @@ body {
 }
 
 .nav a:not(.signup-btn):hover::after {
-  content: "";
+  /* content: "";
   position: absolute;
   bottom: 0;
   left: 0.75rem;
   right: 0.75rem;
   height: 2px;
-  /* background-color: var(--primary-color); */
-  background-color: #da1616;
+  background-color: var(--primary-color); */
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  bottom: 0;
+  width: calc(100% - 1.5rem);
+  height: 2px;
+  background-color: var(--primary-color);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.25s ease;
+}
+.nav a:not(.signup-btn):hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 .signup-btn {
@@ -142,6 +156,16 @@ body {
   transform: translateY(-2px);
   /* box-shadow: 0 4px 12px rgba(74, 111, 165, 0.25); */
   box-shadow: 0 4px 12px rgba(218, 22, 22, 0.25);
+}
+
+.logo-text {
+  text-decoration: none;
+  color: var(--primary-dark);
+  font-weight: 700;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, var(--primary-dark), var(--accent-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .user-email {

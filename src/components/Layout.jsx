@@ -46,7 +46,11 @@ export default function Layout() {
             <div className="logo-icon">
               <span>🐨</span>
             </div>
-            <h1>KoalaRoute AI</h1>
+            <h1>
+              <a href="/" className="logo-text">
+                KoalaRoute AI
+              </a>
+            </h1>
           </div>
 
           <nav className={`nav ${isMobileMenuOpen ? "nav-open" : ""}`}>
