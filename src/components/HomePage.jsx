@@ -1,4 +1,3 @@
-// updated
 import React from "react";
 import "./HomePage.css";
 
@@ -10,7 +9,7 @@ export default function HomePage() {
         <div className="hero-content">
           <h1>
             Plan Smarter, Travel Better
-            <span className="accent">with KoalaRoute AI</span>
+            <span className="accent"> with KoalaRoute AI</span>
           </h1>
           <p className="hero-description">
             Your intelligent travel companion that simplifies trip planning.
@@ -67,7 +66,7 @@ export default function HomePage() {
       {/* Features Section */}
       <section className="features-section">
         <div className="section-header">
-          <h2>Why travelers love KoalaRoute AI</h2>
+          <h1 className="feature-title">Why travelers love KoalaRoute AI</h1>
           <p>Everything you need for stress-free travel planning</p>
         </div>
         <div className="features-grid">
